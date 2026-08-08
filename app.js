@@ -81,6 +81,14 @@ app.post('/generate', upload.fields([
   try {
     const data = req.body;
 
+    // Validasi NIK: wajib 16 digit angka (validasi klien ada di script.js,
+    // ini benteng sisi server bila JS dimatikan atau request langsung)
+    if (!data.nik || !/^\d{16}$/.test(data.nik)) {
+      return res.status(400).render('error', {
+        message: 'NIK harus terdiri dari 16 digit angka'
+      });
+    }
+
     // Foto: utamakan hasil cropper (dataURL), fallback ke file upload mentah
     if (data.pas_photo_data && data.pas_photo_data.startsWith('data:image/')) {
       const photoData = data.pas_photo_data.replace(/^data:image\/\w+;base64,/, '');
@@ -196,13 +204,13 @@ async function generateEKTP(data) {
     // Font NIK menggunakan OCR - posisinya diturunkan 20px dari posisi awal (sekarang 125)
     try {
       ctx.font = '32px OCR';
-      ctx.fillText(data.nik, 170, 125); // posisi y diturunkan dari 105 menjadi 125 (+20px)
+      ctx.fillText(data.nik, 180, 125); // x=180 agar tidak menempel titik dua template
       console.log('Menggunakan font OCR untuk NIK');
     } catch (e) {
       console.error('Error menggunakan font OCR:', e);
       // Fallback ke font monospace
       ctx.font = '32px monospace';
-      ctx.fillText(data.nik, 170, 125);
+      ctx.fillText(data.nik, 180, 125);
     }
     
     // Font data menggunakan Arrial - posisi y tetap seperti sebelumnya

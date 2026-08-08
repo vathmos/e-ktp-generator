@@ -62,8 +62,14 @@
                                         <input type="text" class="form-control" id="provinsi" name="provinsi" required>
                                     </div>
                                     <div class="mb-3">
-                                        <label for="kota" class="form-label"><i class="bi bi-building me-1"></i>Kota</label>
-                                        <input type="text" class="form-control" id="kota" name="kota" required>
+                                        <label for="kota" class="form-label"><i class="bi bi-building me-1"></i>Kota/Kabupaten</label>
+                                        <div class="input-group">
+                                            <select class="form-select" id="jenis_wilayah" name="jenis_wilayah" style="max-width: 140px;">
+                                                <option value="KOTA" selected>KOTA</option>
+                                                <option value="KABUPATEN">KABUPATEN</option>
+                                            </select>
+                                            <input type="text" class="form-control" id="kota" name="kota" placeholder="Nama kota/kabupaten" required>
+                                        </div>
                                     </div>
                                     <div class="mb-3">
                                         <label for="nik" class="form-label"><i class="bi bi-credit-card-2-front me-1"></i>NIK</label>

@@ -168,6 +168,9 @@ async function generateEKTP(data) {
     // Konfigurasi font
     ctx.fillStyle = 'black';
     
+    // Prefix wilayah: KOTA atau KABUPATEN (dari form), default KOTA
+    const wilayahPrefix = (data.jenis_wilayah || 'KOTA').toUpperCase();
+
     // Font provinsi dan kota (Arrial) - posisi tengah
     try {
       // Provinsi (di tengah)
@@ -176,7 +179,7 @@ async function generateEKTP(data) {
       // Posisi tengah horizontal di 380, vertikal di 65 (ditambah 10px dari sebelumnya)
       ctx.fillText(`PROVINSI ${data.provinsi.toUpperCase()}`, 380, 65);
       // Kota (di tengah)
-      ctx.fillText(`KOTA ${data.kota.toUpperCase()}`, 380, 90);
+      ctx.fillText(`${wilayahPrefix} ${data.kota.toUpperCase()}`, 380, 90);
       
       // Reset text align kembali ke default untuk teks lainnya
       ctx.textAlign = 'left';
@@ -186,7 +189,7 @@ async function generateEKTP(data) {
       ctx.font = '25px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(`PROVINSI ${data.provinsi.toUpperCase()}`, 380, 65);
-      ctx.fillText(`KOTA ${data.kota.toUpperCase()}`, 380, 90);
+      ctx.fillText(`${wilayahPrefix} ${data.kota.toUpperCase()}`, 380, 90);
       ctx.textAlign = 'left';
     }
     

@@ -21,7 +21,9 @@ try {
   
   // Daftarkan font
   if (fs.existsSync(ocrFontPath)) {
-    registerFont(ocrFontPath, { family: 'OCR' });
+    // Nama family harus sama dengan nama internal font ("OCR A Extended"),
+    // karena node-canvas/Pango mencari font berdasarkan nama aslinya.
+    registerFont(ocrFontPath, { family: 'OCR A Extended' });
     console.log('Font OCR berhasil didaftarkan');
   }
   
@@ -204,15 +206,15 @@ async function generateEKTP(data) {
       ctx.textAlign = 'left';
     }
     
-    // Font NIK menggunakan OCR - posisinya diturunkan 20px dari posisi awal (sekarang 125)
+    // Font NIK: utamakan OCR-A; bila font engine tidak bisa memuatnya (mis. build
+    // node-canvas tertentu menolak file OCR ini), Pango otomatis fallback ke
+    // Courier New (monospace) — jauh lebih rapi/ID-like daripada Sans.
     try {
-      ctx.font = '32px OCR';
+      ctx.font = "32px 'OCR A Extended', 'Courier New', monospace";
       ctx.fillText(data.nik, 180, 125); // x=180 agar tidak menempel titik dua template
-      console.log('Menggunakan font OCR untuk NIK');
     } catch (e) {
       console.error('Error menggunakan font OCR:', e);
-      // Fallback ke font monospace
-      ctx.font = '32px monospace';
+      ctx.font = "32px 'Courier New', monospace";
       ctx.fillText(data.nik, 180, 125);
     }
     

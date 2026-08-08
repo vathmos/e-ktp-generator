@@ -42,6 +42,13 @@
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
+/* ---------- OCR font untuk NIK (self-hosted, sama dgn hasil kartu) ---------- */
+@font-face {
+    font-family: 'OCR A Extended';
+    src: url('/fonts/Ocr.ttf') format('truetype');
+    font-display: swap;
+}
+
 /* ---------- Reset ---------- */
 *,
 *::before,
@@ -280,6 +287,13 @@ img {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-soft);
     background-color: var(--surface);
+}
+
+/* NIK memakai font OCR agar konsisten dengan tampilan kartu */
+#nik {
+    font-family: 'OCR A Extended', 'Courier New', monospace;
+    letter-spacing: 0.1em;
+    font-size: 1.02rem;
 }
 
 .select {

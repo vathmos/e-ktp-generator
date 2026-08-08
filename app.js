@@ -79,15 +79,22 @@ app.post('/generate', upload.fields([
   { name: 'tanda_tangan', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    if (!req.files || !req.files['pas_photo']) {
-      return res.status(400).render('error', { 
-        message: 'Pas foto wajib diupload' 
+    const data = req.body;
+
+    // Foto: utamakan hasil cropper (dataURL), fallback ke file upload mentah
+    if (data.pas_photo_data && data.pas_photo_data.startsWith('data:image/')) {
+      const photoData = data.pas_photo_data.replace(/^data:image\/\w+;base64,/, '');
+      const photoPath = path.join(__dirname, 'public/uploads', `photo_${Date.now()}.png`);
+      fs.writeFileSync(photoPath, Buffer.from(photoData, 'base64'));
+      data.pas_photo = path.relative(__dirname, photoPath);
+    } else if (req.files && req.files['pas_photo']) {
+      data.pas_photo = req.files['pas_photo'][0].path;
+    } else {
+      return res.status(400).render('error', {
+        message: 'Pas foto wajib diupload'
       });
     }
 
-    const data = req.body;
-    data.pas_photo = req.files['pas_photo'][0].path;
-    
     // Jika tanda tangan diberikan sebagai data URL
     if (data.tanda_tangan && data.tanda_tangan.startsWith('data:image/png;base64,')) {
       // Simpan tanda tangan sebagai file
@@ -119,19 +126,28 @@ async function generateEKTP(data) {
     // Baca template dengan Jimp terlebih dahulu
     const template = await Jimp.read(path.join(__dirname, 'public/images/Template.png'));
     
+    // Frame foto tetap dengan rasio 3:4
+    const PHOTO = { x: 515, y: 130, w: 175, h: 233 };
+
     // Baca foto pas
     const photoPath = path.join(__dirname, data.pas_photo);
     let pasPhoto = await Jimp.read(photoPath);
-    
-    // Resize dan crop foto jika perlu
-    if (pasPhoto.getWidth() !== 432) {
-      pasPhoto = pasPhoto.crop(0, 0, Math.min(pasPhoto.getWidth(), 432), Math.min(pasPhoto.getHeight(), 450));
+
+    // Center-crop defensif ke rasio 3:4 (hasil cropper sudah 3:4; ini jaga-jaga
+    // bila foto dikirim mentah tanpa cropper), lalu resize pasti ke ukuran frame
+    const targetRatio = PHOTO.w / PHOTO.h;
+    const srcRatio = pasPhoto.getWidth() / pasPhoto.getHeight();
+    if (srcRatio > targetRatio) {
+      const newW = Math.round(pasPhoto.getHeight() * targetRatio);
+      pasPhoto.crop(Math.round((pasPhoto.getWidth() - newW) / 2), 0, newW, pasPhoto.getHeight());
+    } else if (srcRatio < targetRatio) {
+      const newH = Math.round(pasPhoto.getWidth() / targetRatio);
+      pasPhoto.crop(0, Math.round((pasPhoto.getHeight() - newH) / 2), pasPhoto.getWidth(), newH);
     }
-    
-    pasPhoto = pasPhoto.resize(Math.round(pasPhoto.getWidth() * 0.4), Math.round(pasPhoto.getHeight() * 0.4));
-    
-    // Tempel foto ke template
-    template.composite(pasPhoto, 520, 140);
+    pasPhoto.resize(PHOTO.w, PHOTO.h);
+
+    // Tempel foto ke frame tetap
+    template.composite(pasPhoto, PHOTO.x, PHOTO.y);
 
     // Simpan template dengan foto untuk diproses lebih lanjut dengan canvas
     const templateWithPhotoPath = path.join(__dirname, 'public/images/temp_template.png');
@@ -260,6 +276,12 @@ async function generateEKTP(data) {
     // Hapus file tanda tangan jika ada
     if (data.tanda_tangan_path && fs.existsSync(data.tanda_tangan_path)) {
       fs.unlinkSync(data.tanda_tangan_path);
+    }
+
+    // Hapus file foto sumber setelah ditempel ke kartu
+    const pasPhotoAbs = path.join(__dirname, data.pas_photo);
+    if (data.pas_photo && fs.existsSync(pasPhotoAbs)) {
+      fs.unlinkSync(pasPhotoAbs);
     }
     
     return outputPath;

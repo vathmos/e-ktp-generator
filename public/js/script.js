@@ -161,45 +161,78 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Preview foto saat dipilih
+    // Cropper foto 3:4 (UX ala pengaturan foto profil sosmed)
     const photoInput = document.getElementById('pas_photo');
-    if (photoInput) {
+    const cropperImage = document.getElementById('cropperImage');
+    const cropperModalEl = document.getElementById('cropperModal');
+    let cropper = null;
+    let cropperModal = null;
+
+    function renderPhotoPreview(dataUrl) {
+        const previewContainer = document.getElementById('photo-preview-container');
+        if (!previewContainer) return;
+        previewContainer.innerHTML = '';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'mt-3 text-center';
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.className = 'img-thumbnail';
+        img.style.height = '120px';
+        img.style.width = 'auto';
+        const caption = document.createElement('p');
+        caption.className = 'text-muted small mt-1';
+        caption.textContent = 'Foto yang akan digunakan';
+        wrapper.appendChild(img);
+        wrapper.appendChild(caption);
+        previewContainer.appendChild(wrapper);
+    }
+
+    if (photoInput && cropperImage && cropperModalEl && window.Cropper && window.bootstrap) {
+        cropperModal = new bootstrap.Modal(cropperModalEl);
+
         photoInput.addEventListener('change', function() {
             if (this.files && this.files[0]) {
                 const reader = new FileReader();
-                
                 reader.onload = function(e) {
-                    // Jika ada elemen preview container
-                    const previewContainer = document.getElementById('photo-preview-container');
-                    if (previewContainer) {
-                        // Clear previous preview
-                        previewContainer.innerHTML = '';
-                        
-                        // Create preview
-                        const previewWrapper = document.createElement('div');
-                        previewWrapper.className = 'mt-3 text-center';
-                        
-                        const previewImage = document.createElement('img');
-                        previewImage.src = e.target.result;
-                        previewImage.className = 'img-thumbnail';
-                        previewImage.style.height = '120px';
-                        previewImage.style.width = 'auto';
-                        
-                        const previewCaption = document.createElement('p');
-                        previewCaption.className = 'text-muted small mt-1';
-                        previewCaption.textContent = 'Foto yang akan digunakan';
-                        
-                        previewWrapper.appendChild(previewImage);
-                        previewWrapper.appendChild(previewCaption);
-                        previewContainer.appendChild(previewWrapper);
-                        
-                        showToast('Foto berhasil diunggah', 'success');
-                    }
+                    cropperImage.src = e.target.result;
+                    cropperModal.show();
                 };
-                
                 reader.readAsDataURL(this.files[0]);
             }
         });
+
+        cropperModalEl.addEventListener('shown.bs.modal', function() {
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(cropperImage, {
+                aspectRatio: 3 / 4,
+                viewMode: 1,
+                dragMode: 'move',
+                autoCropArea: 1,
+                background: false,
+                movable: true,
+                zoomable: true
+            });
+        });
+
+        cropperModalEl.addEventListener('hidden.bs.modal', function() {
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        });
+
+        const cropSave = document.getElementById('cropSave');
+        if (cropSave) {
+            cropSave.addEventListener('click', function() {
+                if (!cropper) return;
+                const canvas = cropper.getCroppedCanvas({ width: 350, height: 466 });
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                document.getElementById('pas_photo_data').value = dataUrl;
+                renderPhotoPreview(dataUrl);
+                cropperModal.hide();
+                showToast('Foto berhasil disesuaikan', 'success');
+            });
+        }
     }
     
     // Fungsi untuk menampilkan toast notification

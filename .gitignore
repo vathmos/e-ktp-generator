@@ -35,6 +35,8 @@ temp/
 # Generated E-KTP images
 public/images/result.png
 public/images/temp_template.png
+public/images/result_*.png
+public/images/temp_template_*.png
 
 # Uploaded user files
 public/uploads/*

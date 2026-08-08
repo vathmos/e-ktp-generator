@@ -112,11 +112,11 @@ app.post('/generate', upload.fields([
       data.tanda_tangan_path = signaturePath;
     }
 
-    // Buat KTP
-    const resultPath = await generateEKTP(data);
-    
-    res.render('result', { 
-      imgPath: '/images/result.png',
+    // Buat KTP (mengembalikan path web unik)
+    const imgPath = await generateEKTP(data);
+
+    res.render('result', {
+      imgPath: imgPath,
       data: data
     });
     
@@ -131,6 +131,9 @@ app.post('/generate', upload.fields([
 // Fungsi untuk membuat E-KTP
 async function generateEKTP(data) {
   try {
+    // Token unik per request agar file tidak saling menimpa (hindari race condition)
+    const uid = `${Date.now()}_${Math.round(Math.random() * 1e6)}`;
+
     // Baca template dengan Jimp terlebih dahulu
     const template = await Jimp.read(path.join(__dirname, 'public/images/Template.png'));
     
@@ -158,7 +161,7 @@ async function generateEKTP(data) {
     template.composite(pasPhoto, PHOTO.x, PHOTO.y);
 
     // Simpan template dengan foto untuk diproses lebih lanjut dengan canvas
-    const templateWithPhotoPath = path.join(__dirname, 'public/images/temp_template.png');
+    const templateWithPhotoPath = path.join(__dirname, 'public/images', `temp_template_${uid}.png`);
     await template.writeAsync(templateWithPhotoPath);
 
     // Load template dengan foto ke canvas
@@ -280,19 +283,37 @@ async function generateEKTP(data) {
       ctx.textAlign = 'left';
     }
     
-    // Simpan hasil
-    const outputPath = path.join(__dirname, 'public/images/result.png');
+    // Simpan hasil dengan nama unik agar request bersamaan tidak saling menimpa
+    // dan browser tidak menampilkan gambar lama dari cache
+    const outputName = `result_${uid}.png`;
+    const outputPath = path.join(__dirname, 'public/images', outputName);
     const out = fs.createWriteStream(outputPath);
     const stream = canvas.createPNGStream();
-    
+
     await new Promise((resolve, reject) => {
       stream.pipe(out);
       out.on('finish', resolve);
       out.on('error', reject);
     });
-    
+
     // Hapus file temporary
     fs.unlinkSync(templateWithPhotoPath);
+
+    // Bersihkan hasil lama (lebih dari 10 menit) agar folder tidak menumpuk
+    try {
+      const imagesDir = path.join(__dirname, 'public/images');
+      const now = Date.now();
+      for (const f of fs.readdirSync(imagesDir)) {
+        if (/^(result|temp_template)_.*\.png$/.test(f)) {
+          const fp = path.join(imagesDir, f);
+          if (fp !== outputPath && now - fs.statSync(fp).mtimeMs > 10 * 60 * 1000) {
+            fs.unlinkSync(fp);
+          }
+        }
+      }
+    } catch (cleanupErr) {
+      console.error('Gagal membersihkan file hasil lama:', cleanupErr.message);
+    }
     
     // Hapus file tanda tangan jika ada
     if (data.tanda_tangan_path && fs.existsSync(data.tanda_tangan_path)) {
@@ -305,7 +326,8 @@ async function generateEKTP(data) {
       fs.unlinkSync(pasPhotoAbs);
     }
     
-    return outputPath;
+    // Kembalikan path web (bukan path filesystem) untuk dipakai di view
+    return `/images/${outputName}`;
   } catch (error) {
     console.error('Error generating E-KTP:', error);
     throw error;

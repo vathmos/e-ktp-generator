@@ -206,21 +206,26 @@ async function generateEKTP(data) {
     }
     
     // Font data menggunakan Arrial - posisi y tetap seperti sebelumnya
+    // maxWidth agar nilai panjang otomatis mengecil, tidak menabrak area foto.
+    // Kolom data mulai x=190 dan foto mulai x=515 → batas ~315px.
+    // Baris jenis kelamin dibatasi lebih sempit agar tidak menabrak "Gol. Darah".
+    const COL_MAXW = 315;
+    const SEX_MAXW = 160;
     try {
       ctx.font = '16px Arrial';
-      ctx.fillText(data.nama.toUpperCase(), 190, 155);
-      ctx.fillText(data.ttl.toUpperCase(), 190, 178);
-      ctx.fillText(data.jenis_kelamin.toUpperCase(), 190, 201);
+      ctx.fillText(data.nama.toUpperCase(), 190, 155, COL_MAXW);
+      ctx.fillText(data.ttl.toUpperCase(), 190, 178, COL_MAXW);
+      ctx.fillText(data.jenis_kelamin.toUpperCase(), 190, 201, SEX_MAXW);
       ctx.fillText(data.golongan_darah.toUpperCase(), 463, 200);
-      ctx.fillText(data.alamat.toUpperCase(), 190, 222);
-      ctx.fillText(data.rt_rw.toUpperCase(), 190, 244);
-      ctx.fillText(data.kel_desa.toUpperCase(), 190, 267);
-      ctx.fillText(data.kecamatan.toUpperCase(), 190, 289);
-      ctx.fillText(data.agama.toUpperCase(), 190, 310);
-      ctx.fillText(data.status.toUpperCase(), 190, 333);
-      ctx.fillText(data.pekerjaan.toUpperCase(), 190, 356);
-      ctx.fillText(data.kewarganegaraan.toUpperCase(), 190, 379);
-      ctx.fillText(data.masa_berlaku.toUpperCase(), 190, 400);
+      ctx.fillText(data.alamat.toUpperCase(), 190, 222, COL_MAXW);
+      ctx.fillText(data.rt_rw.toUpperCase(), 190, 244, COL_MAXW);
+      ctx.fillText(data.kel_desa.toUpperCase(), 190, 267, COL_MAXW);
+      ctx.fillText(data.kecamatan.toUpperCase(), 190, 289, COL_MAXW);
+      ctx.fillText(data.agama.toUpperCase(), 190, 310, COL_MAXW);
+      ctx.fillText(data.status.toUpperCase(), 190, 333, COL_MAXW);
+      ctx.fillText(data.pekerjaan.toUpperCase(), 190, 356, COL_MAXW);
+      ctx.fillText(data.kewarganegaraan.toUpperCase(), 190, 379, COL_MAXW);
+      ctx.fillText(data.masa_berlaku.toUpperCase(), 190, 400, COL_MAXW);
 
       // Blok tempat & tanggal dikeluarkan: center di bawah foto agar tidak terpotong
       const issueCenterX = 603;

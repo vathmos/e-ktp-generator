@@ -235,20 +235,23 @@ async function generateEKTP(data) {
       // ... dan seterusnya dengan posisi yang sama seperti di atas
     }
     
-    // Tanda tangan (nama pertama atau tanda tangan yang di-upload)
+    // Tanda tangan: center di bawah blok tanggal (mengikuti issueCenterX = 603)
+    const signCenterX = 603;
     try {
       if (data.tanda_tangan_path) {
         // Jika ada tanda tangan yang di-upload
         const signatureImg = await loadImage(data.tanda_tangan_path);
-        // Resize tanda tangan ke ukuran yang sesuai
+        // Resize tanda tangan ke ukuran yang sesuai, center secara horizontal
         const signWidth = 120;
-        const signHeight = 50;
-        ctx.drawImage(signatureImg, 540, 385, signWidth, signHeight);
+        const signHeight = 45;
+        ctx.drawImage(signatureImg, signCenterX - signWidth / 2, 410, signWidth, signHeight);
       } else {
         // Jika tidak, gunakan nama pertama dengan font Sign
         const nameParts = data.nama.split(' ');
         ctx.font = '40px Sign';
-        ctx.fillText(nameParts[0], 540, 405);
+        ctx.textAlign = 'center';
+        ctx.fillText(nameParts[0], signCenterX, 442, 170);
+        ctx.textAlign = 'left';
         console.log('Menggunakan font Sign untuk tanda tangan');
       }
     } catch (e) {
@@ -256,7 +259,9 @@ async function generateEKTP(data) {
       // Fallback ke font standard
       const nameParts = data.nama.split(' ');
       ctx.font = '40px serif';
-      ctx.fillText(nameParts[0], 540, 405);
+      ctx.textAlign = 'center';
+      ctx.fillText(nameParts[0], signCenterX, 442, 170);
+      ctx.textAlign = 'left';
     }
     
     // Simpan hasil

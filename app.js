@@ -3,7 +3,7 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
 const Jimp = require('jimp');
-const { createCanvas, registerFont, loadImage } = require('canvas');
+const { createCanvas, GlobalFonts, loadImage } = require('@napi-rs/canvas');
 
 // Register semua font dengan path absolut
 try {
@@ -19,21 +19,21 @@ try {
   console.log('Sign:', signFontPath);
   console.log('Arrial:', arrialFontPath);
   
-  // Daftarkan font
+  // Daftarkan font (@napi-rs/canvas: alias di argumen kedua = nama yang dipakai
+  // di ctx.font). Engine ini merender OCR-A dengan benar, tidak seperti
+  // node-canvas/Pango yang menolak font OCR ini.
   if (fs.existsSync(ocrFontPath)) {
-    // Nama family harus sama dengan nama internal font ("OCR A Extended"),
-    // karena node-canvas/Pango mencari font berdasarkan nama aslinya.
-    registerFont(ocrFontPath, { family: 'OCR A Extended' });
+    GlobalFonts.registerFromPath(ocrFontPath, 'OCR A Extended');
     console.log('Font OCR berhasil didaftarkan');
   }
-  
+
   if (fs.existsSync(signFontPath)) {
-    registerFont(signFontPath, { family: 'Sign' });
+    GlobalFonts.registerFromPath(signFontPath, 'Sign');
     console.log('Font Sign berhasil didaftarkan');
   }
-  
+
   if (fs.existsSync(arrialFontPath)) {
-    registerFont(arrialFontPath, { family: 'Arrial' });
+    GlobalFonts.registerFromPath(arrialFontPath, 'Arrial');
     console.log('Font Arrial berhasil didaftarkan');
   }
 } catch (error) {
@@ -162,12 +162,9 @@ async function generateEKTP(data) {
     // Tempel foto ke frame tetap
     template.composite(pasPhoto, PHOTO.x, PHOTO.y);
 
-    // Simpan template dengan foto untuk diproses lebih lanjut dengan canvas
-    const templateWithPhotoPath = path.join(__dirname, 'public/images', `temp_template_${uid}.png`);
-    await template.writeAsync(templateWithPhotoPath);
-
-    // Load template dengan foto ke canvas
-    const templateImg = await loadImage(templateWithPhotoPath);
+    // Load template (berisi foto) langsung dari buffer ke canvas — tanpa file temp
+    const templateBuffer = await template.getBufferAsync(Jimp.MIME_PNG);
+    const templateImg = await loadImage(templateBuffer);
     const canvasWidth = templateImg.width;
     const canvasHeight = templateImg.height;
     
@@ -206,9 +203,8 @@ async function generateEKTP(data) {
       ctx.textAlign = 'left';
     }
     
-    // Font NIK: utamakan OCR-A; bila font engine tidak bisa memuatnya (mis. build
-    // node-canvas tertentu menolak file OCR ini), Pango otomatis fallback ke
-    // Courier New (monospace) — jauh lebih rapi/ID-like daripada Sans.
+    // Font NIK: OCR-A (dirender benar oleh @napi-rs/canvas); Courier New/monospace
+    // tetap disertakan sebagai fallback aman bila font gagal dimuat.
     try {
       ctx.font = "32px 'OCR A Extended', 'Courier New', monospace";
       ctx.fillText(data.nik, 180, 125); // x=180 agar tidak menempel titik dua template
@@ -289,17 +285,7 @@ async function generateEKTP(data) {
     // dan browser tidak menampilkan gambar lama dari cache
     const outputName = `result_${uid}.png`;
     const outputPath = path.join(__dirname, 'public/images', outputName);
-    const out = fs.createWriteStream(outputPath);
-    const stream = canvas.createPNGStream();
-
-    await new Promise((resolve, reject) => {
-      stream.pipe(out);
-      out.on('finish', resolve);
-      out.on('error', reject);
-    });
-
-    // Hapus file temporary
-    fs.unlinkSync(templateWithPhotoPath);
+    fs.writeFileSync(outputPath, canvas.toBuffer('image/png'));
 
     // Bersihkan hasil lama (lebih dari 10 menit) agar folder tidak menumpuk
     try {

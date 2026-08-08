@@ -222,7 +222,7 @@ async function generateEKTP(data) {
     try {
       ctx.font = '16px Arrial';
       ctx.fillText(data.nama.toUpperCase(), 190, 155, COL_MAXW);
-      ctx.fillText(data.ttl.toUpperCase(), 190, 178, COL_MAXW);
+      ctx.fillText(data.ttl.toUpperCase(), 190, 182, COL_MAXW);
       ctx.fillText(data.jenis_kelamin.toUpperCase(), 190, 201, SEX_MAXW);
       ctx.fillText(data.golongan_darah.toUpperCase(), 463, 200);
       ctx.fillText(data.alamat.toUpperCase(), 190, 222, COL_MAXW);
@@ -232,8 +232,8 @@ async function generateEKTP(data) {
       ctx.fillText(data.agama.toUpperCase(), 190, 310, COL_MAXW);
       ctx.fillText(data.status.toUpperCase(), 190, 333, COL_MAXW);
       ctx.fillText(data.pekerjaan.toUpperCase(), 190, 356, COL_MAXW);
-      ctx.fillText(data.kewarganegaraan.toUpperCase(), 190, 379, COL_MAXW);
-      ctx.fillText(data.masa_berlaku.toUpperCase(), 190, 400, COL_MAXW);
+      ctx.fillText(data.kewarganegaraan.toUpperCase(), 190, 382, COL_MAXW);
+      ctx.fillText(data.masa_berlaku.toUpperCase(), 190, 404, COL_MAXW);
 
       // Blok tempat & tanggal dikeluarkan: center di bawah foto agar tidak terpotong
       const issueCenterX = 603;

@@ -1,24 +1,64 @@
-// Form validation for E-KTP Generator
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
-    
-    // Signature Pad
+// E-KTP Generator — pure JS (no framework)
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* ---------- Toast ---------- */
+    function showToast(message, type) {
+        type = type || 'info';
+        const container = document.querySelector('.toast-container');
+        if (!container) return;
+        const icons = {
+            success: 'bi-check-circle-fill',
+            danger: 'bi-exclamation-triangle-fill',
+            warning: 'bi-exclamation-circle-fill',
+            info: 'bi-info-circle-fill'
+        };
+        const el = document.createElement('div');
+        el.className = 'toast toast--' + type;
+        el.innerHTML = '<i class="bi ' + (icons[type] || icons.info) + '"></i><div>' + message + '</div>';
+        container.appendChild(el);
+        requestAnimationFrame(function () { el.classList.add('is-show'); });
+        setTimeout(function () {
+            el.classList.remove('is-show');
+            setTimeout(function () { el.remove(); }, 220);
+        }, 3200);
+    }
+
+    /* ---------- Theme toggle ---------- */
+    const themeToggle = document.getElementById('themeToggle');
+    function currentTheme() {
+        return document.documentElement.getAttribute('data-theme') || 'light';
+    }
+    function applyThemeIcon(t) {
+        if (!themeToggle) return;
+        const i = themeToggle.querySelector('i');
+        if (i) i.className = t === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+    }
+    applyThemeIcon(currentTheme());
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+            const next = currentTheme() === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            try { localStorage.setItem('theme', next); } catch (e) {}
+            applyThemeIcon(next);
+        });
+    }
+
+    /* ---------- Signature pad ---------- */
     const canvas = document.getElementById('signatureCanvas');
     if (canvas) {
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
         let lastX = 0;
         let lastY = 0;
-        
-        // Style untuk tanda tangan
+
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        
+
         // Petakan koordinat pointer (ukuran tampilan) ke koordinat internal
-        // canvas (400x150). Tanpa ini, goresan meleset karena canvas ditampilkan
-        // dengan lebar berbeda (class w-100), terutama saat lebih dari 1 tarikan.
+        // canvas (400x150) agar goresan tidak meleset saat canvas ditampilkan
+        // dengan lebar berbeda — terutama pada lebih dari satu tarikan.
         function getPos(clientX, clientY) {
             const rect = canvas.getBoundingClientRect();
             return {
@@ -27,188 +67,159 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         }
 
-        // Event listener untuk menggambar
-        canvas.addEventListener('mousedown', (e) => {
+        function saveSignature() {
+            document.getElementById('signature_data').value = canvas.toDataURL('image/png');
+        }
+
+        canvas.addEventListener('mousedown', function (e) {
             isDrawing = true;
             const p = getPos(e.clientX, e.clientY);
-            lastX = p.x;
-            lastY = p.y;
+            lastX = p.x; lastY = p.y;
         });
-
-        canvas.addEventListener('mousemove', (e) => {
+        canvas.addEventListener('mousemove', function (e) {
             if (!isDrawing) return;
             const p = getPos(e.clientX, e.clientY);
-
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
             ctx.lineTo(p.x, p.y);
             ctx.stroke();
-
-            lastX = p.x;
-            lastY = p.y;
+            lastX = p.x; lastY = p.y;
         });
+        canvas.addEventListener('mouseup', function () { isDrawing = false; saveSignature(); });
+        canvas.addEventListener('mouseout', function () { isDrawing = false; });
 
-        canvas.addEventListener('mouseup', () => {
-            isDrawing = false;
-            // Save signature data
-            document.getElementById('signature_data').value = canvas.toDataURL('image/png');
-        });
-
-        canvas.addEventListener('mouseout', () => {
-            isDrawing = false;
-        });
-
-        // Touch events for mobile
-        canvas.addEventListener('touchstart', (e) => {
+        canvas.addEventListener('touchstart', function (e) {
             e.preventDefault();
-            const touch = e.touches[0];
-            const p = getPos(touch.clientX, touch.clientY);
-            lastX = p.x;
-            lastY = p.y;
+            const t = e.touches[0];
+            const p = getPos(t.clientX, t.clientY);
+            lastX = p.x; lastY = p.y;
             isDrawing = true;
         });
-
-        canvas.addEventListener('touchmove', (e) => {
+        canvas.addEventListener('touchmove', function (e) {
             e.preventDefault();
             if (!isDrawing) return;
-            const touch = e.touches[0];
-            const p = getPos(touch.clientX, touch.clientY);
-
+            const t = e.touches[0];
+            const p = getPos(t.clientX, t.clientY);
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
             ctx.lineTo(p.x, p.y);
             ctx.stroke();
+            lastX = p.x; lastY = p.y;
+        });
+        canvas.addEventListener('touchend', function () { isDrawing = false; saveSignature(); });
 
-            lastX = p.x;
-            lastY = p.y;
-        });
-        
-        canvas.addEventListener('touchend', () => {
-            isDrawing = false;
-            // Save signature data
-            document.getElementById('signature_data').value = canvas.toDataURL('image/png');
-        });
-        
-        // Clear signature
         const clearBtn = document.getElementById('clearSignature');
         if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
+            clearBtn.addEventListener('click', function () {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 document.getElementById('signature_data').value = '';
                 showToast('Tanda tangan berhasil dihapus', 'info');
             });
         }
     }
-    
+
+    /* ---------- Form validation & loading ---------- */
+    const form = document.getElementById('ektp-form');
     if (form) {
         const loadingIndicator = document.getElementById('loadingIndicator');
-        form.addEventListener('submit', function(event) {
-            // Validasi NIK (harus 16 digit angka)
+        form.addEventListener('submit', function (event) {
             const nikInput = document.getElementById('nik');
             if (nikInput && nikInput.value) {
-                // Hapus semua karakter non-digit
                 const nikValue = nikInput.value.replace(/\D/g, '');
-                
                 if (nikValue.length !== 16) {
                     event.preventDefault();
                     showToast('NIK harus terdiri dari 16 digit angka', 'danger');
                     nikInput.focus();
                     return false;
                 }
-                
-                // Update nilai dengan hanya digit
                 nikInput.value = nikValue;
             }
-            
-            // Validasi format RT/RW (format 000/000)
+
             const rtRwInput = document.getElementById('rt_rw');
             if (rtRwInput && rtRwInput.value) {
-                const rtRwRegex = /^\d{3}\/\d{3}$/;
-                if (!rtRwRegex.test(rtRwInput.value)) {
+                if (!/^\d{3}\/\d{3}$/.test(rtRwInput.value)) {
                     event.preventDefault();
                     showToast('Format RT/RW harus 000/000', 'danger');
                     rtRwInput.focus();
                     return false;
                 }
             }
-            
-            // Validasi ukuran file foto
+
             const photoInput = document.getElementById('pas_photo');
             if (photoInput && photoInput.files && photoInput.files.length > 0) {
-                const fileSize = photoInput.files[0].size / 1024 / 1024; // dalam MB
+                const fileSize = photoInput.files[0].size / 1024 / 1024;
                 if (fileSize > 5) {
                     event.preventDefault();
                     showToast('Ukuran file foto tidak boleh lebih dari 5MB', 'danger');
                     return false;
                 }
             }
-            
-            // Validasi tanda tangan
+
             const signatureInput = document.getElementById('signature_data');
             if (signatureInput && !signatureInput.value) {
                 event.preventDefault();
                 showToast('Silakan buat tanda tangan terlebih dahulu', 'danger');
-                document.getElementById('signatureCanvas').scrollIntoView({ behavior: 'smooth' });
+                const sc = document.getElementById('signatureCanvas');
+                if (sc) sc.scrollIntoView({ behavior: 'smooth' });
                 return false;
             }
-            
-            // Tampilkan loading indicator
-            if (loadingIndicator) {
-                loadingIndicator.style.display = 'block';
-                
-                // Disable submit button
-                const submitBtn = document.getElementById('submitBtn');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Memproses...';
-                }
+
+            if (loadingIndicator) loadingIndicator.classList.add('is-visible');
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner spinner-sm"></span> Memproses...';
             }
-            
             return true;
         });
     }
-    
-    // Cropper foto 3:4 (UX ala pengaturan foto profil sosmed)
+
+    /* ---------- Photo cropper (3:4) + custom modal ---------- */
     const photoInput = document.getElementById('pas_photo');
     const cropperImage = document.getElementById('cropperImage');
     const cropperModalEl = document.getElementById('cropperModal');
     let cropper = null;
-    let cropperModal = null;
 
     function renderPhotoPreview(dataUrl) {
-        const previewContainer = document.getElementById('photo-preview-container');
-        if (!previewContainer) return;
-        previewContainer.innerHTML = '';
-        const wrapper = document.createElement('div');
-        wrapper.className = 'mt-3 text-center';
+        const container = document.getElementById('photo-preview-container');
+        if (!container) return;
+        container.innerHTML = '';
         const img = document.createElement('img');
         img.src = dataUrl;
-        img.className = 'img-thumbnail';
-        img.style.height = '120px';
-        img.style.width = 'auto';
         const caption = document.createElement('p');
-        caption.className = 'text-muted small mt-1';
         caption.textContent = 'Foto yang akan digunakan';
-        wrapper.appendChild(img);
-        wrapper.appendChild(caption);
-        previewContainer.appendChild(wrapper);
+        container.appendChild(img);
+        container.appendChild(caption);
     }
 
-    if (photoInput && cropperImage && cropperModalEl && window.Cropper && window.bootstrap) {
-        cropperModal = new bootstrap.Modal(cropperModalEl);
+    function closeModal() {
+        if (!cropperModalEl) return;
+        cropperModalEl.classList.remove('is-open');
+        cropperModalEl.setAttribute('aria-hidden', 'true');
+        if (cropper) { cropper.destroy(); cropper = null; }
+    }
 
-        photoInput.addEventListener('change', function() {
+    function openModal() {
+        if (!cropperModalEl) return;
+        cropperModalEl.classList.add('is-open');
+        cropperModalEl.setAttribute('aria-hidden', 'false');
+    }
+
+    if (photoInput && cropperImage && cropperModalEl && window.Cropper) {
+        photoInput.addEventListener('change', function () {
             if (this.files && this.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     cropperImage.src = e.target.result;
-                    cropperModal.show();
+                    openModal();
                 };
                 reader.readAsDataURL(this.files[0]);
             }
         });
 
-        cropperModalEl.addEventListener('shown.bs.modal', function() {
+        // Inisialisasi cropper setelah gambar dimuat & modal tampil
+        cropperImage.addEventListener('load', function () {
+            if (!cropperModalEl.classList.contains('is-open')) return;
             if (cropper) cropper.destroy();
             cropper = new Cropper(cropperImage, {
                 aspectRatio: 3 / 4,
@@ -221,67 +232,28 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        cropperModalEl.addEventListener('hidden.bs.modal', function() {
-            if (cropper) {
-                cropper.destroy();
-                cropper = null;
-            }
+        // Tutup: tombol [data-close], klik backdrop, tombol Escape
+        cropperModalEl.querySelectorAll('[data-close]').forEach(function (btn) {
+            btn.addEventListener('click', closeModal);
+        });
+        cropperModalEl.addEventListener('click', function (e) {
+            if (e.target === cropperModalEl) closeModal();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && cropperModalEl.classList.contains('is-open')) closeModal();
         });
 
         const cropSave = document.getElementById('cropSave');
         if (cropSave) {
-            cropSave.addEventListener('click', function() {
+            cropSave.addEventListener('click', function () {
                 if (!cropper) return;
-                const canvas = cropper.getCroppedCanvas({ width: 350, height: 466 });
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                const c = cropper.getCroppedCanvas({ width: 350, height: 466 });
+                const dataUrl = c.toDataURL('image/jpeg', 0.92);
                 document.getElementById('pas_photo_data').value = dataUrl;
                 renderPhotoPreview(dataUrl);
-                cropperModal.hide();
+                closeModal();
                 showToast('Foto berhasil disesuaikan', 'success');
             });
         }
     }
-    
-    // Fungsi untuk menampilkan toast notification
-    function showToast(message, type = 'info') {
-        const toastContainer = document.querySelector('.toast-container');
-        if (!toastContainer) return;
-        
-        const toastId = 'toast-' + Date.now();
-        const bgClass = type === 'danger' ? 'bg-danger' : 
-                        type === 'success' ? 'bg-success' : 
-                        type === 'warning' ? 'bg-warning' : 'bg-info';
-        
-        const iconClass = type === 'danger' ? 'bi-exclamation-triangle-fill' : 
-                           type === 'success' ? 'bi-check-circle-fill' : 
-                           type === 'warning' ? 'bi-exclamation-circle-fill' : 'bi-info-circle-fill';
-        
-        const toastHtml = `
-            <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header ${bgClass} text-white">
-                    <i class="bi ${iconClass} me-2"></i>
-                    <strong class="me-auto">E-KTP Generator</strong>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-                <div class="toast-body">
-                    ${message}
-                </div>
-            </div>
-        `;
-        
-        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-        
-        const toastElement = document.getElementById(toastId);
-        const toast = new bootstrap.Toast(toastElement, {
-            autohide: true,
-            delay: 3000
-        });
-        
-        toast.show();
-        
-        // Remove toast from DOM after it's hidden
-        toastElement.addEventListener('hidden.bs.toast', function() {
-            toastElement.remove();
-        });
-    }
-}); 
+});

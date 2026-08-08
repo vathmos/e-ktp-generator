@@ -202,8 +202,13 @@ async function generateEKTP(data) {
       ctx.fillText(data.pekerjaan.toUpperCase(), 190, 356);
       ctx.fillText(data.kewarganegaraan.toUpperCase(), 190, 379);
       ctx.fillText(data.masa_berlaku.toUpperCase(), 190, 400);
-      ctx.fillText(`KOTA ${data.kota.toUpperCase()}`, 553, 350);
-      ctx.fillText(data.terbuat || new Date().toLocaleDateString('id-ID'), 570, 370);
+
+      // Blok tempat & tanggal dikeluarkan: center di bawah foto agar tidak terpotong
+      const issueCenterX = 603;
+      ctx.textAlign = 'center';
+      ctx.fillText(data.kota.toUpperCase(), issueCenterX, 383, 175);
+      ctx.fillText(data.terbuat || new Date().toLocaleDateString('id-ID'), issueCenterX, 403, 175);
+      ctx.textAlign = 'left';
     } catch (e) {
       console.error('Error menggunakan font Arrial untuk data:', e);
       // Fallback ke font standard

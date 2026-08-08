@@ -224,7 +224,7 @@ async function generateEKTP(data) {
       ctx.fillText(data.nama.toUpperCase(), 190, 155, COL_MAXW);
       ctx.fillText(data.ttl.toUpperCase(), 190, 182, COL_MAXW);
       ctx.fillText(data.jenis_kelamin.toUpperCase(), 190, 201, SEX_MAXW);
-      ctx.fillText(data.golongan_darah.toUpperCase(), 463, 200);
+      ctx.fillText((data.golongan_darah || '').toUpperCase(), 463, 200);
       ctx.fillText(data.alamat.toUpperCase(), 190, 222, COL_MAXW);
       ctx.fillText(data.rt_rw.toUpperCase(), 190, 244, COL_MAXW);
       ctx.fillText(data.kel_desa.toUpperCase(), 190, 267, COL_MAXW);

@@ -16,64 +16,71 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         
+        // Petakan koordinat pointer (ukuran tampilan) ke koordinat internal
+        // canvas (400x150). Tanpa ini, goresan meleset karena canvas ditampilkan
+        // dengan lebar berbeda (class w-100), terutama saat lebih dari 1 tarikan.
+        function getPos(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (clientX - rect.left) * (canvas.width / rect.width),
+                y: (clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
         // Event listener untuk menggambar
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            lastX = e.clientX - rect.left;
-            lastY = e.clientY - rect.top;
+            const p = getPos(e.clientX, e.clientY);
+            lastX = p.x;
+            lastY = p.y;
         });
-        
+
         canvas.addEventListener('mousemove', (e) => {
             if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
-            const currentX = e.clientX - rect.left;
-            const currentY = e.clientY - rect.top;
-            
+            const p = getPos(e.clientX, e.clientY);
+
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
-            ctx.lineTo(currentX, currentY);
+            ctx.lineTo(p.x, p.y);
             ctx.stroke();
-            
-            lastX = currentX;
-            lastY = currentY;
+
+            lastX = p.x;
+            lastY = p.y;
         });
-        
+
         canvas.addEventListener('mouseup', () => {
             isDrawing = false;
             // Save signature data
             document.getElementById('signature_data').value = canvas.toDataURL('image/png');
         });
-        
+
         canvas.addEventListener('mouseout', () => {
             isDrawing = false;
         });
-        
+
         // Touch events for mobile
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
             const touch = e.touches[0];
-            lastX = touch.clientX - rect.left;
-            lastY = touch.clientY - rect.top;
+            const p = getPos(touch.clientX, touch.clientY);
+            lastX = p.x;
+            lastY = p.y;
             isDrawing = true;
         });
-        
+
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
             const touch = e.touches[0];
-            const currentX = touch.clientX - rect.left;
-            const currentY = touch.clientY - rect.top;
-            
+            const p = getPos(touch.clientX, touch.clientY);
+
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
-            ctx.lineTo(currentX, currentY);
+            ctx.lineTo(p.x, p.y);
             ctx.stroke();
-            
-            lastX = currentX;
-            lastY = currentY;
+
+            lastX = p.x;
+            lastY = p.y;
         });
         
         canvas.addEventListener('touchend', () => {

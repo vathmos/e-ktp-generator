@@ -177,9 +177,9 @@ async function generateEKTP(data) {
       ctx.font = '25px Arrial';
       ctx.textAlign = 'center';
       // Posisi tengah horizontal di 380, vertikal di 65 (ditambah 10px dari sebelumnya)
-      ctx.fillText(`PROVINSI ${data.provinsi.toUpperCase()}`, 380, 65);
+      ctx.fillText(`PROVINSI ${data.provinsi.toUpperCase()}`, 360, 65);
       // Kota (di tengah)
-      ctx.fillText(`${wilayahPrefix} ${data.kota.toUpperCase()}`, 380, 90);
+      ctx.fillText(`${wilayahPrefix} ${data.kota.toUpperCase()}`, 360, 90);
       
       // Reset text align kembali ke default untuk teks lainnya
       ctx.textAlign = 'left';
@@ -188,8 +188,8 @@ async function generateEKTP(data) {
       // Fallback ke font standard
       ctx.font = '25px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`PROVINSI ${data.provinsi.toUpperCase()}`, 380, 65);
-      ctx.fillText(`${wilayahPrefix} ${data.kota.toUpperCase()}`, 380, 90);
+      ctx.fillText(`PROVINSI ${data.provinsi.toUpperCase()}`, 360, 65);
+      ctx.fillText(`${wilayahPrefix} ${data.kota.toUpperCase()}`, 360, 90);
       ctx.textAlign = 'left';
     }
     

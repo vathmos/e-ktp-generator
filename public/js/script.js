@@ -183,11 +183,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderPhotoPreview(dataUrl) {
         const container = document.getElementById('photo-preview-container');
         if (!container) return;
+        const prompt = document.getElementById('dropzonePrompt');
+        if (prompt) prompt.style.display = 'none';
         container.innerHTML = '';
         const img = document.createElement('img');
         img.src = dataUrl;
         const caption = document.createElement('p');
-        caption.textContent = 'Foto yang akan digunakan';
+        caption.textContent = 'Foto yang akan digunakan — klik untuk mengganti';
         container.appendChild(img);
         container.appendChild(caption);
     }
@@ -205,17 +207,54 @@ document.addEventListener('DOMContentLoaded', function () {
         cropperModalEl.setAttribute('aria-hidden', 'false');
     }
 
+    function handlePhotoFile(file) {
+        if (!file) return;
+        if (!file.type || file.type.indexOf('image/') !== 0) {
+            showToast('File harus berupa gambar', 'danger');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            cropperImage.src = e.target.result;
+            openModal();
+        };
+        reader.readAsDataURL(file);
+    }
+
     if (photoInput && cropperImage && cropperModalEl && window.Cropper) {
         photoInput.addEventListener('change', function () {
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    cropperImage.src = e.target.result;
-                    openModal();
-                };
-                reader.readAsDataURL(this.files[0]);
-            }
+            if (this.files && this.files[0]) handlePhotoFile(this.files[0]);
         });
+
+        // Dropzone: klik untuk memilih + drag & drop
+        const dropzone = document.getElementById('dropzone');
+        if (dropzone) {
+            dropzone.addEventListener('click', function () { photoInput.click(); });
+
+            ['dragenter', 'dragover'].forEach(function (ev) {
+                dropzone.addEventListener(ev, function (e) {
+                    e.preventDefault();
+                    dropzone.classList.add('is-drag');
+                });
+            });
+            ['dragleave', 'dragend', 'drop'].forEach(function (ev) {
+                dropzone.addEventListener(ev, function (e) {
+                    e.preventDefault();
+                    dropzone.classList.remove('is-drag');
+                });
+            });
+            dropzone.addEventListener('drop', function (e) {
+                const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+                if (!file) return;
+                // Salin file ke input agar tetap terkirim & memenuhi required
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    photoInput.files = dt.files;
+                } catch (_) {}
+                handlePhotoFile(file);
+            });
+        }
 
         // Inisialisasi cropper setelah gambar dimuat & modal tampil
         cropperImage.addEventListener('load', function () {
@@ -250,6 +289,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 const c = cropper.getCroppedCanvas({ width: 350, height: 466 });
                 const dataUrl = c.toDataURL('image/jpeg', 0.92);
                 document.getElementById('pas_photo_data').value = dataUrl;
+                // Hasil crop sudah tersimpan; lepas required agar submit tetap jalan
+                // walau file mentah tidak tersalin (mis. DataTransfer tak didukung)
+                photoInput.removeAttribute('required');
                 renderPhotoPreview(dataUrl);
                 closeModal();
                 showToast('Foto berhasil disesuaikan', 'success');

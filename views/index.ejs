@@ -31,7 +31,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
-    <link rel="stylesheet" href="/css/style.css?v=4">
+    <link rel="stylesheet" href="/css/style.css?v=5">
 </head>
 
 <body>
@@ -187,10 +187,16 @@
                 <div class="grid">
                     <div class="field">
                         <label class="label" for="pas_photo"><i class="bi bi-camera"></i>Pas Foto</label>
-                        <input type="file" class="input" id="pas_photo" name="pas_photo" accept="image/*" required>
-                        <input type="hidden" id="pas_photo_data" name="pas_photo_data">
-                        <span class="hint">Pilih foto, lalu sesuaikan area 3:4 seperti mengatur foto profil</span>
-                        <div id="photo-preview-container" class="photo-preview"></div>
+                        <div class="dropzone" id="dropzone">
+                            <input type="file" id="pas_photo" name="pas_photo" accept="image/*" class="sr-only" required>
+                            <input type="hidden" id="pas_photo_data" name="pas_photo_data">
+                            <div class="dropzone__prompt" id="dropzonePrompt">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                                <p><strong>Seret &amp; letakkan</strong> foto di sini<br>atau <span class="link">klik untuk memilih</span></p>
+                                <span class="hint">Nanti disesuaikan ke rasio 3:4</span>
+                            </div>
+                            <div id="photo-preview-container" class="photo-preview"></div>
+                        </div>
                     </div>
                     <div class="field">
                         <label class="label" for="signatureCanvas"><i class="bi bi-pen"></i>Tanda Tangan</label>
@@ -247,6 +253,6 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
-    <script src="/js/script.js?v=3"></script>
+    <script src="/js/script.js?v=5"></script>
 </body>
 </html>

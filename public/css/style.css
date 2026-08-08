@@ -323,28 +323,68 @@ img {
     flex: 1 1 auto;
 }
 
-/* File input */
-.input[type="file"] {
-    padding: 0.4rem 0.5rem;
-    cursor: pointer;
-}
-
-.input[type="file"]::file-selector-button {
-    margin-right: 0.75rem;
-    padding: 0.4rem 0.85rem;
-    font: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #fff;
-    background-color: var(--accent);
+/* Dropzone (pas foto) */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
     border: 0;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background-color 0.15s ease;
 }
 
-.input[type="file"]::file-selector-button:hover {
-    background-color: var(--accent-hover);
+.dropzone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 160px;
+    padding: 1.4rem 1rem;
+    text-align: center;
+    background-color: var(--surface-2);
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.dropzone:hover {
+    border-color: var(--accent);
+}
+
+.dropzone.is-drag {
+    border-color: var(--accent);
+    background-color: var(--accent-soft);
+}
+
+.dropzone__prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--muted);
+    pointer-events: none;
+}
+
+.dropzone__prompt i {
+    font-size: 2rem;
+    color: var(--accent);
+}
+
+.dropzone__prompt p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+.dropzone__prompt .link {
+    color: var(--accent);
+    font-weight: 600;
 }
 
 /* ---------- Signature pad ---------- */

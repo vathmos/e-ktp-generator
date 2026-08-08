@@ -256,12 +256,21 @@ async function generateEKTP(data) {
     const signCenterX = 603;
     try {
       if (data.tanda_tangan_path) {
-        // Jika ada tanda tangan yang di-upload
-        const signatureImg = await loadImage(data.tanda_tangan_path);
-        // Resize tanda tangan ke ukuran yang sesuai, center secara horizontal
-        const signWidth = 120;
-        const signHeight = 45;
-        ctx.drawImage(signatureImg, signCenterX - signWidth / 2, 410, signWidth, signHeight);
+        // Pangkas area transparan di sekeliling coretan agar tanda tangan mengisi
+        // kotak (tidak jadi kecil karena banyak ruang kosong), lalu skalakan
+        // proporsional ke dalam kotak dan center.
+        const sigJimp = await Jimp.read(data.tanda_tangan_path);
+        sigJimp.autocrop({ tolerance: 0.02, cropOnlyFrames: false });
+
+        const boxW = 150, boxH = 52, boxTop = 404;
+        const scale = Math.min(boxW / sigJimp.getWidth(), boxH / sigJimp.getHeight());
+        const w = Math.round(sigJimp.getWidth() * scale);
+        const h = Math.round(sigJimp.getHeight() * scale);
+
+        const sigBuf = await sigJimp.getBufferAsync(Jimp.MIME_PNG);
+        const signatureImg = await loadImage(sigBuf);
+        // center horizontal di signCenterX, dan vertikal di dalam kotak
+        ctx.drawImage(signatureImg, signCenterX - w / 2, boxTop + (boxH - h) / 2, w, h);
       } else {
         // Jika tidak, gunakan nama pertama dengan font Sign
         const nameParts = data.nama.split(' ');

@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let lastY = 0;
 
         ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 3.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 

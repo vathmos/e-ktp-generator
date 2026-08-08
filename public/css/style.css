@@ -1,49 +1,79 @@
-/* CSS untuk E-KTP Generator */
+/* CSS untuk E-KTP Generator — Clean Minimal */
 :root {
-    --primary-color: #0d6efd;
-    --primary-dark: #0a58ca;
-    --secondary-color: #6c757d;
-    --success-color: #28a745;
-    --danger-color: #dc3545;
-    --light-color: #f8f9fa;
-    --dark-color: #212529;
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-soft: #eef2ff;
+    --danger: #dc2626;
+    --radius: 10px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 body {
-    background-color: #f0f2f5;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    -webkit-font-smoothing: antialiased;
 }
 
 .container {
     flex: 1;
 }
 
-/* Header styling */
+/* Navbar — putih dengan garis bawah tipis */
+.navbar {
+    background-color: var(--surface) !important;
+    border-bottom: 1px solid var(--border);
+}
+
 .navbar-brand {
     font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: -0.2px;
+    color: var(--text) !important;
 }
 
-/* Card styling */
+.navbar .nav-link {
+    color: var(--muted) !important;
+    font-weight: 500;
+    transition: color 0.15s ease;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link.active {
+    color: var(--accent) !important;
+}
+
+/* Card — flat, border tipis, tanpa efek melayang */
 .card {
-    border-radius: 15px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
-    border: none;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.card:hover {
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-    transform: translateY(-5px);
 }
 
 .card-header {
     padding: 1.5rem;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    background-color: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.card-header h2 {
+    color: var(--text) !important;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.card-header p {
+    color: var(--muted) !important;
 }
 
 .card-body {
@@ -54,88 +84,128 @@ body {
 .form-label {
     font-weight: 500;
     margin-bottom: 0.5rem;
-    color: var(--dark-color);
+    color: var(--text);
 }
 
-.form-control, .form-select {
-    border-radius: 8px;
-    padding: 0.8rem 1rem;
-    border: 1px solid #ced4da;
-    transition: all 0.2s ease;
+.form-text {
+    color: var(--muted);
 }
 
-.form-control:focus, .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.2);
+.form-control,
+.form-select {
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 0.9rem;
+    border: 1px solid var(--border);
+    color: var(--text);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Buttons */
+.form-control::placeholder {
+    color: #9ca3af;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Buttons — solid, tanpa gradient & tanpa translate */
 .btn {
-    padding: 0.8rem 1.8rem;
-    border-radius: 8px;
+    padding: 0.65rem 1.4rem;
+    border-radius: var(--radius-sm);
     font-weight: 600;
-    letter-spacing: 0.3px;
-    transition: all 0.3s ease;
+    letter-spacing: 0;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    border: none;
+    background-color: var(--accent);
+    border: 1px solid var(--accent);
 }
 
-.btn-primary:hover {
-    background: linear-gradient(135deg, var(--primary-dark), #084298);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(10, 88, 202, 0.3);
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--accent-hover);
+    border-color: var(--accent-hover);
+    box-shadow: none;
 }
 
 .btn-secondary {
-    background: linear-gradient(135deg, var(--secondary-color), #5a6268);
-    border: none;
+    background-color: #f3f4f6;
+    border: 1px solid var(--border);
+    color: var(--text);
 }
 
-.btn-secondary:hover {
-    background: linear-gradient(135deg, #5a6268, #4e555b);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+.btn-secondary:hover,
+.btn-secondary:focus {
+    background-color: #e5e7eb;
+    border-color: #d1d5db;
+    color: var(--text);
+}
+
+.btn-sm {
+    padding: 0.4rem 0.9rem;
+}
+
+/* Badge aksen */
+.badge.bg-primary {
+    background-color: var(--accent) !important;
+    font-weight: 600;
 }
 
 /* Signature canvas */
 #signatureCanvas {
     background-color: #fff;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    border-radius: var(--radius-sm);
 }
 
 .border {
-    border-radius: 8px !important;
+    border-radius: var(--radius-sm) !important;
+    border-color: var(--border) !important;
 }
 
-/* Styling untuk hasil KTP */
+.bg-light {
+    background-color: #f9fafb !important;
+}
+
+/* Hasil KTP */
 img.img-fluid.border {
-    border: 1px solid #ddd !important;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-    border-radius: 12px !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius) !important;
 }
 
-/* Footer */
+/* Footer — terang, garis atas tipis */
 footer {
-    background-color: var(--dark-color);
-    color: #fff;
-    padding: 15px 0;
+    background-color: var(--surface);
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    padding: 18px 0;
     width: 100%;
     margin-top: 2rem;
 }
 
 footer a {
-    color: var(--primary-color);
+    color: var(--accent);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: color 0.15s ease;
 }
 
 footer a:hover {
-    color: #fff;
+    color: var(--accent-hover);
     text-decoration: underline;
+}
+
+/* Modal cropper */
+.modal-content {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--border);
 }
 
 /* Responsive adjustments */
@@ -143,19 +213,20 @@ footer a:hover {
     .card-body {
         padding: 1.5rem;
     }
-    
+
     .btn {
         width: 100%;
         margin-bottom: 0.5rem;
     }
-    
+
     #signatureCanvas {
         width: 100% !important;
         height: 150px !important;
     }
-    
-    .form-control, .form-select {
-        font-size: 16px; /* Prevent zoom on focus on mobile devices */
+
+    .form-control,
+    .form-select {
+        font-size: 16px; /* Cegah zoom saat fokus di perangkat mobile */
     }
 }
 
@@ -163,21 +234,21 @@ footer a:hover {
     .card-body {
         padding: 1rem;
     }
-    
+
     h2 {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
     }
-    
+
     .form-label {
         font-size: 0.9rem;
     }
 }
 
-/* Animation for successful generation */
+/* Animasi masuk yang halus */
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(8px);
     }
     to {
         opacity: 1;
@@ -186,10 +257,10 @@ footer a:hover {
 }
 
 .card {
-    animation: fadeIn 0.6s ease-out;
+    animation: fadeIn 0.4s ease-out;
 }
 
-/* Loading animation */
+/* Loading */
 .loading {
     display: none;
     text-align: center;
@@ -199,6 +270,7 @@ footer a:hover {
 .loading .spinner-border {
     width: 3rem;
     height: 3rem;
+    color: var(--accent) !important;
 }
 
 /* Custom file input */
@@ -221,8 +293,8 @@ footer a:hover {
 
 .toast {
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     margin-bottom: 10px;
     overflow: hidden;
-} 
+}

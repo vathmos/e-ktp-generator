@@ -308,9 +308,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const c = cropper.getCroppedCanvas({ width: 350, height: 466 });
                 const dataUrl = c.toDataURL('image/jpeg', 0.92);
                 document.getElementById('pas_photo_data').value = dataUrl;
-                // Hasil crop sudah tersimpan; lepas required agar submit tetap jalan
-                // walau file mentah tidak tersalin (mis. DataTransfer tak didukung)
+                // Hasil crop sudah tersimpan; lepas required agar submit tetap jalan.
+                // Kosongkan input file agar file mentah TIDAK ikut terkirim (hemat
+                // payload — penting untuk limit body 4.5MB di Vercel).
                 photoInput.removeAttribute('required');
+                photoInput.value = '';
                 renderPhotoPreview(dataUrl);
                 closeModal();
                 showToast('Foto berhasil disesuaikan', 'success');

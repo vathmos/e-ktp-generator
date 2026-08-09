@@ -50,25 +50,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Konfigurasi penyimpanan upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
+// Upload disimpan di memori (Vercel: filesystem read-only, tak boleh tulis disk)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 6 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
       cb(new Error('File harus berupa gambar'), false);
     }
-  } 
+  }
 });
 
 // Routes
@@ -97,31 +89,26 @@ app.post('/generate', upload.fields([
       });
     }
 
-    // Foto: utamakan hasil cropper (dataURL), fallback ke file upload mentah
+    // Foto -> Buffer (utamakan hasil cropper dataURL, fallback file upload mentah)
+    let photoBuffer;
     if (data.pas_photo_data && data.pas_photo_data.startsWith('data:image/')) {
-      const photoData = data.pas_photo_data.replace(/^data:image\/\w+;base64,/, '');
-      const photoPath = path.join(__dirname, 'public/uploads', `photo_${Date.now()}.png`);
-      fs.writeFileSync(photoPath, Buffer.from(photoData, 'base64'));
-      data.pas_photo = path.relative(__dirname, photoPath);
+      photoBuffer = Buffer.from(data.pas_photo_data.replace(/^data:image\/\w+;base64,/, ''), 'base64');
     } else if (req.files && req.files['pas_photo']) {
-      data.pas_photo = req.files['pas_photo'][0].path;
+      photoBuffer = req.files['pas_photo'][0].buffer;
     } else {
       return res.status(400).render('error', {
         message: 'Pas foto wajib diupload'
       });
     }
 
-    // Jika tanda tangan diberikan sebagai data URL
+    // Tanda tangan (opsional) -> Buffer
+    let signatureBuffer = null;
     if (data.tanda_tangan && data.tanda_tangan.startsWith('data:image/png;base64,')) {
-      // Simpan tanda tangan sebagai file
-      const signatureData = data.tanda_tangan.replace(/^data:image\/png;base64,/, '');
-      const signaturePath = path.join(__dirname, 'public/uploads', `signature_${Date.now()}.png`);
-      fs.writeFileSync(signaturePath, Buffer.from(signatureData, 'base64'));
-      data.tanda_tangan_path = signaturePath;
+      signatureBuffer = Buffer.from(data.tanda_tangan.replace(/^data:image\/png;base64,/, ''), 'base64');
     }
 
-    // Buat KTP (mengembalikan path web unik)
-    const imgPath = await generateEKTP(data);
+    // Buat KTP -> data URL (tanpa menyimpan file apa pun)
+    const imgPath = await generateEKTP(data, photoBuffer, signatureBuffer);
 
     res.render('result', {
       imgPath: imgPath,
@@ -136,21 +123,17 @@ app.post('/generate', upload.fields([
   }
 });
 
-// Fungsi untuk membuat E-KTP
-async function generateEKTP(data) {
+// Fungsi untuk membuat E-KTP (in-memory: menerima buffer, mengembalikan data URL)
+async function generateEKTP(data, photoBuffer, signatureBuffer) {
   try {
-    // Token unik per request agar file tidak saling menimpa (hindari race condition)
-    const uid = `${Date.now()}_${Math.round(Math.random() * 1e6)}`;
-
     // Baca template dengan Jimp terlebih dahulu
     const template = await Jimp.read(path.join(__dirname, 'public/images/Template.png'));
-    
+
     // Frame foto tetap dengan rasio 3:4
     const PHOTO = { x: 515, y: 130, w: 175, h: 233 };
 
-    // Baca foto pas
-    const photoPath = path.join(__dirname, data.pas_photo);
-    let pasPhoto = await Jimp.read(photoPath);
+    // Baca foto pas dari buffer
+    let pasPhoto = await Jimp.read(photoBuffer);
 
     // Center-crop defensif ke rasio 3:4 (hasil cropper sudah 3:4; ini jaga-jaga
     // bila foto dikirim mentah tanpa cropper), lalu resize pasti ke ukuran frame
@@ -261,11 +244,11 @@ async function generateEKTP(data) {
     // Tanda tangan: center di bawah blok tanggal (mengikuti issueCenterX = 603)
     const signCenterX = 603;
     try {
-      if (data.tanda_tangan_path) {
+      if (signatureBuffer) {
         // Pangkas area transparan di sekeliling coretan agar tanda tangan mengisi
         // kotak (tidak jadi kecil karena banyak ruang kosong), lalu skalakan
         // proporsional ke dalam kotak dan center.
-        const sigJimp = await Jimp.read(data.tanda_tangan_path);
+        const sigJimp = await Jimp.read(signatureBuffer);
         sigJimp.autocrop({ tolerance: 0.02, cropOnlyFrames: false });
 
         const boxW = 150, boxH = 52, boxTop = 404;
@@ -296,48 +279,20 @@ async function generateEKTP(data) {
       ctx.textAlign = 'left';
     }
     
-    // Simpan hasil dengan nama unik agar request bersamaan tidak saling menimpa
-    // dan browser tidak menampilkan gambar lama dari cache
-    const outputName = `result_${uid}.png`;
-    const outputPath = path.join(__dirname, 'public/images', outputName);
-    fs.writeFileSync(outputPath, canvas.toBuffer('image/png'));
-
-    // Bersihkan hasil lama (lebih dari 10 menit) agar folder tidak menumpuk
-    try {
-      const imagesDir = path.join(__dirname, 'public/images');
-      const now = Date.now();
-      for (const f of fs.readdirSync(imagesDir)) {
-        if (/^(result|temp_template)_.*\.png$/.test(f)) {
-          const fp = path.join(imagesDir, f);
-          if (fp !== outputPath && now - fs.statSync(fp).mtimeMs > 10 * 60 * 1000) {
-            fs.unlinkSync(fp);
-          }
-        }
-      }
-    } catch (cleanupErr) {
-      console.error('Gagal membersihkan file hasil lama:', cleanupErr.message);
-    }
-    
-    // Hapus file tanda tangan jika ada
-    if (data.tanda_tangan_path && fs.existsSync(data.tanda_tangan_path)) {
-      fs.unlinkSync(data.tanda_tangan_path);
-    }
-
-    // Hapus file foto sumber setelah ditempel ke kartu
-    const pasPhotoAbs = path.join(__dirname, data.pas_photo);
-    if (data.pas_photo && fs.existsSync(pasPhotoAbs)) {
-      fs.unlinkSync(pasPhotoAbs);
-    }
-    
-    // Kembalikan path web (bukan path filesystem) untuk dipakai di view
-    return `/images/${outputName}`;
+    // Kembalikan hasil sebagai data URL (tanpa menulis file ke disk)
+    return `data:image/png;base64,${canvas.toBuffer('image/png').toString('base64')}`;
   } catch (error) {
     console.error('Error generating E-KTP:', error);
     throw error;
   }
 }
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server berjalan di http://localhost:${port}`);
-}); 
+// Start server hanya saat dijalankan langsung (lokal). Di Vercel, app diimpor
+// sebagai serverless function lewat module.exports.
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server berjalan di http://localhost:${port}`);
+  });
+}
+
+module.exports = app; 

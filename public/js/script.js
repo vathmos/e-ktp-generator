@@ -47,9 +47,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const randomBtn = document.getElementById('randomFill');
     if (randomBtn) {
         randomBtn.addEventListener('click', async function () {
-            const original = randomBtn.innerHTML;
-            randomBtn.disabled = true;
-            randomBtn.innerHTML = '<span class="spinner spinner-sm"></span> Mengacak...';
             try {
                 const res = await fetch('/random');
                 if (!res.ok) throw new Error('gagal');
@@ -61,9 +58,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 showToast('Data acak berhasil diisi', 'success');
             } catch (e) {
                 showToast('Gagal mengambil data acak', 'danger');
-            } finally {
-                randomBtn.disabled = false;
-                randomBtn.innerHTML = original;
             }
         });
     }

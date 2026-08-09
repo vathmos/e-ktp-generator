@@ -43,6 +43,31 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    /* ---------- Isi Acak ---------- */
+    const randomBtn = document.getElementById('randomFill');
+    if (randomBtn) {
+        randomBtn.addEventListener('click', async function () {
+            const original = randomBtn.innerHTML;
+            randomBtn.disabled = true;
+            randomBtn.innerHTML = '<span class="spinner spinner-sm"></span> Mengacak...';
+            try {
+                const res = await fetch('/random');
+                if (!res.ok) throw new Error('gagal');
+                const data = await res.json();
+                Object.keys(data).forEach(function (key) {
+                    const el = document.querySelector('[name="' + key + '"]');
+                    if (el) el.value = data[key];
+                });
+                showToast('Data acak berhasil diisi', 'success');
+            } catch (e) {
+                showToast('Gagal mengambil data acak', 'danger');
+            } finally {
+                randomBtn.disabled = false;
+                randomBtn.innerHTML = original;
+            }
+        });
+    }
+
     /* ---------- Signature pad ---------- */
     const canvas = document.getElementById('signatureCanvas');
     if (canvas) {

@@ -500,6 +500,12 @@ img {
     font-size: 0.85rem;
 }
 
+.form-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
 .form-actions {
     display: flex;
     justify-content: center;

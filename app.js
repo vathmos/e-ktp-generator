@@ -76,6 +76,12 @@ app.get('/', (req, res) => {
   res.render('index');
 });
 
+// Data E-KTP acak (untuk tombol "Isi Acak")
+const { generateRandomKTP } = require('./random-data');
+app.get('/random', (req, res) => {
+  res.json(generateRandomKTP());
+});
+
 app.post('/generate', upload.fields([
   { name: 'pas_photo', maxCount: 1 },
   { name: 'tanda_tangan', maxCount: 1 }
